@@ -1,0 +1,299 @@
+import streamlit as st
+import yfinance as yf
+import pandas as pd
+import plotly.graph_objects as go
+from datetime import datetime, timedelta
+
+# --- PAGE CONFIG ---
+st.set_page_config(
+    page_title="Starlight Quant Dashboard",
+    page_icon="📈",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# --- CUSTOM CSS FOR PREMIUM FEEL ---
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Main background */
+    .stApp {
+        background: radial-gradient(circle at top right, #1e1e2f, #121212);
+        color: #e0e0e0;
+    }
+
+    /* Sidebar styling */
+    section[data-testid="stSidebar"] {
+        background-color: rgba(20, 20, 30, 0.8);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Card-like metrics */
+    div[data-testid="metric-container"] {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1rem;
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+        transition: transform 0.3s ease;
+    }
+
+    div[data-testid="metric-container"]:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(0, 200, 255, 0.4);
+    }
+
+    /* Custom Header */
+    .header-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 2rem;
+    }
+
+    .glow-text {
+        text-shadow: 0 0 10px rgba(0, 200, 255, 0.5);
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 2.5rem;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 768px) {
+        .glow-text {
+            font-size: 1.8rem;
+        }
+        div[data-testid="metric-container"] {
+            margin-bottom: 10px;
+        }
+        /* Financial data header adjustments */
+        .stMarkdown h4 {
+            font-size: 1.1rem !important;
+            margin-top: 1rem !important;
+        }
+        /* Spacing for grouped data */
+        .stExpander div[data-testid="stVerticalBlock"] > div {
+            padding: 2px 0;
+        }
+    }
+
+    /* Footer */
+    .footer {
+        text-align: center;
+        padding: 20px;
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 0.8rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- APP LOGIC ---
+
+def get_stock_data(ticker, period):
+    stock = yf.Ticker(ticker)
+    # Get historical data
+    df = stock.history(period=period)
+    # Get info for ratios
+    info = stock.info
+    return df, info
+
+# Sidebar - Stock Selection
+st.sidebar.header("🕹️ Controls")
+default_stocks = ['TSLA', 'NVDA', 'GOOG', 'MSFT', 'HOOD', 'PLTR']
+selected_stock = st.sidebar.selectbox("Select Active Ticker", default_stocks, index=0)
+
+time_range_map = {
+    "1 Day": "1d",
+    "1 Week": "5d",
+    "1 Month": "1mo",
+    "1 Year": "1y",
+    "5 Years": "5y",
+    "10 Years": "10y"
+}
+selected_range_label = st.sidebar.radio("Time Horizon", list(time_range_map.keys()), index=2)
+selected_period = time_range_map[selected_range_label]
+
+# Header Area
+st.markdown("""
+    <div class="header-container">
+        <h1 class="glow-text">Select Your Stock</h1>
+    </div>
+""", unsafe_allow_html=True)
+
+try:
+    with st.spinner(f'Fetching data for {selected_stock}...'):
+        df, info = get_stock_data(selected_stock, selected_period)
+
+    if df.empty:
+        st.error("No data found for this ticker and period.")
+    else:
+        # Layout: Top Row Metrics
+        col1, col2, col3, col4 = st.columns(4)
+        
+        # Current Price
+        current_price = df['Close'].iloc[-1]
+        prev_price = df['Close'].iloc[0]
+        price_change = current_price - prev_price
+        pct_change = (price_change / prev_price) * 100
+
+        col1.metric("Current Price", f"${current_price:,.2f}", f"{pct_change:+.2f}%")
+        
+        # Financial Data requested: PE ratio, peg ratio, eps
+        pe_ratio = info.get('forwardPE', 'N/A')
+        if pe_ratio != 'N/A': pe_ratio = f"{pe_ratio:.2f}"
+        
+        peg_ratio = info.get('pegRatio', 'N/A')
+        if peg_ratio != 'N/A': peg_ratio = f"{peg_ratio:.2f}"
+        
+        eps = info.get('trailingEps', 'N/A')
+        if eps != 'N/A': eps = f"${eps:.2f}"
+
+        col2.metric("P/E Ratio (Forward)", pe_ratio)
+        col3.metric("PEG Ratio", peg_ratio)
+        col4.metric("EPS (Trailing)", eps)
+
+        # Plotly Chart
+        st.markdown("### Market Movement")
+        
+        # Determine color based on trend
+        line_color = '#00ffcc' if current_price >= prev_price else '#ff4d4d'
+        fill_color = 'rgba(0, 255, 204, 0.1)' if current_price >= prev_price else 'rgba(255, 77, 77, 0.1)'
+
+        fig = go.Figure()
+
+        # Add trace
+        fig.add_trace(go.Scatter(
+            x=df.index, 
+            y=df['Close'],
+            mode='lines',
+            line=dict(color=line_color, width=3, shape='spline'),
+            fill='tozeroy',
+            fillcolor=fill_color,
+            name=selected_stock,
+            hovertemplate='<b>Price:</b> $%{y:.2f}<br><b>Date:</b> %{x}<extra></extra>'
+        ))
+
+        fig.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(
+                showgrid=False,
+                showline=True,
+                linecolor='rgba(255,255,255,0.1)',
+                tickfont=dict(color='rgba(255,255,255,0.5)')
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridcolor='rgba(255,255,255,0.05)',
+                showline=False,
+                tickfont=dict(color='rgba(255,255,255,0.5)'),
+                side='right'
+            ),
+            margin=dict(l=0, r=0, t=20, b=0),
+            height=500,
+            hovermode="x unified",
+            showlegend=False
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Additional Info
+        with st.expander("ℹ️ Company Profile"):
+            st.write(info.get('longBusinessSummary', 'No summary available.'))
+
+        # --- Key Financial Data Section ---
+        with st.expander("📊 Key Financial Data"):
+            def format_val(val, unit="", multiplier=1, is_percent=False):
+                if val is None or val == "N/A": return "N/A"
+                try:
+                    num = float(val) * multiplier
+                    if is_percent:
+                        return f"{num*100:.2f}%"
+                    if unit == "B":
+                        return f"${num/1e9:.2f} Billion"
+                    if unit == "M":
+                        return f"${num/1e6:.2f} Million"
+                    return f"{num:,.2f} {unit}".strip()
+                except:
+                    return "N/A"
+
+            f_col1, f_col2 = st.columns(2)
+
+            with f_col1:
+                st.markdown("#### 💰 Valuation & Market")
+                st.write(f"**Market Cap:** {format_val(info.get('marketCap'), 'B')}")
+                st.write(f"**Trailing P/E:** {format_val(info.get('trailingPE'))}")
+                st.write(f"**Forward P/E:** {format_val(info.get('forwardPE'))}")
+                st.write(f"**Beta (5Y Monthly):** {format_val(info.get('beta'))}")
+                st.write(f"**All-Time High:** {format_val(info.get('allTimeHigh'), '$')}")
+                st.write(f"**Short Ratio:** {format_val(info.get('shortRatio'))}")
+
+                st.markdown("#### 📈 Growth & Targets")
+                st.write(f"**Quarterly Earnings Growth:** {format_val(info.get('earningsQuarterlyGrowth'), is_percent=True)}")
+                st.write(f"**Target High Price:** {format_val(info.get('targetHighPrice'), '$')}")
+                st.write(f"**Target Mean Price:** {format_val(info.get('targetMeanPrice'), '$')}")
+                st.write(f"**Target Low Price:** {format_val(info.get('targetLowPrice'), '$')}")
+
+            with f_col2:
+                st.markdown("#### 🏦 Cash & Debt")
+                st.write(f"**Total Cash:** {format_val(info.get('totalCash'), 'B')}")
+                st.write(f"**Total Debt:** {format_val(info.get('totalDebt'), 'B')}")
+                st.write(f"**Debt to Equity:** {format_val(info.get('debtToEquity'))}")
+                st.write(f"**Free Cashflow:** {format_val(info.get('freeCashflow'), 'M')}")
+                st.write(f"**Operating Cashflow:** {format_val(info.get('operatingCashflow'), 'M')}")
+                st.write(f"**Gross Profits:** {format_val(info.get('grossProfits'), 'M')}")
+
+                st.markdown("#### 💎 Profitability Margins")
+                st.write(f"**Gross Margins:** {format_val(info.get('grossMargins'), is_percent=True)}")
+                st.write(f"**EBITDA Margins:** {format_val(info.get('ebitdaMargins'), is_percent=True)}")
+                st.write(f"**Operating Margins:** {format_val(info.get('operatingMargins'), is_percent=True)}")
+                st.write(f"**Profit Margins:** {format_val(info.get('profitMargins'), is_percent=True)}")
+
+        # --- Company Officers Section ---
+        st.markdown("### 👔 Key Leadership")
+        if st.checkbox("Show Company Officers"):
+            # Ensure the key exists and has data
+            if 'companyOfficers' in info and info['companyOfficers']:
+                officers = info['companyOfficers']
+                officer_list = []
+                
+                for officer in officers:
+                    # Build a dictionary only with available data
+                    row = {}
+                    if 'name' in officer:
+                        row["Name"] = officer['name']
+                    if 'title' in officer:
+                        row["Title"] = officer['title']
+                    if 'age' in officer:
+                        row["Age"] = officer['age']
+                    
+                    # Handle Pay specifically (only if present and non-zero)
+                    if 'totalPay' in officer and officer['totalPay']:
+                        row["Total Pay (M)"] = f"${officer['totalPay']/1_000_000:.2f}"
+                    
+                    if row: # Only add if we actually found some data for this person
+                        officer_list.append(row)
+
+                if officer_list:
+                    # Convert to DataFrame for a clean UI table
+                    df_officers = pd.DataFrame(officer_list)
+                    st.dataframe(df_officers, use_container_width=True, hide_index=True)
+                else:
+                    st.info("No detailed officer metrics found.")
+            else:
+                st.info("Leadership information is not available for this ticker.")
+            
+except Exception as e:
+    st.error(f"Error loading dashboard: {str(e)}")
+
+st.markdown("""
+    <div class="footer">
+        Powered by yfinance & Streamlit • Created by Antigravity AI
+    </div>
+""", unsafe_allow_html=True)
