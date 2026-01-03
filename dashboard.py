@@ -171,8 +171,7 @@ try:
         if eps != 'N/A': eps = f"${eps:.2f}"
 
         col2.metric("P/E Ratio (Forward)", pe_ratio)
-        col3.metric("PEG Ratio", peg_ratio)
-        col4.metric("EPS (Trailing)", eps)
+        col3.metric("EPS (Trailing)", eps)
 
         # Plotly Chart
         st.markdown("### Market Movement")
