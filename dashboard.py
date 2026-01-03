@@ -119,16 +119,22 @@ time_range_map = {
 selected_range_label = st.sidebar.radio("Time Horizon", list(time_range_map.keys()), index=2)
 selected_period = time_range_map[selected_range_label]
 
-# Header Area
-st.markdown("""
+# Placeholder for header
+header_placeholder = st.empty()
+header_placeholder.markdown("""
     <div class="header-container">
         <h1 class="glow-text">Select Your Stock</h1>
     </div>
 """, unsafe_allow_html=True)
 
-try:
     with st.spinner(f'Fetching data for {selected_stock}...'):
         df, info = get_stock_data(selected_stock, selected_period)
+        company_name = info.get('longName', selected_stock)
+        header_placeholder.markdown(f"""
+            <div class="header-container">
+                <h1 class="glow-text">{company_name}</h1>
+            </div>
+        """, unsafe_allow_html=True)
 
     if df.empty:
         st.error("No data found for this ticker and period.")
