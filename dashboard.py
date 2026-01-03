@@ -53,6 +53,7 @@ st.markdown("""
     .header-container {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 15px;
         margin-bottom: 2rem;
     }
@@ -118,6 +119,13 @@ time_range_map = {
 }
 selected_range_label = st.sidebar.radio("Time Horizon", list(time_range_map.keys()), index=2)
 selected_period = time_range_map[selected_range_label]
+
+# Main Title
+st.markdown("""
+    <div style="text-align: center; margin-top: 1rem;">
+        <h2 style="color: rgba(255,255,255,0.7); font-weight: 300; letter-spacing: 2px;">STOCK INFORMATION</h2>
+    </div>
+""", unsafe_allow_html=True)
 
 # Placeholder for header
 header_placeholder = st.empty()
