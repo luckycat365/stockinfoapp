@@ -229,17 +229,24 @@ try:
             st.write(info.get('longBusinessSummary', 'No summary available.'))
 
         # --- Key Financial Data Section ---
-        with st.expander("📊 Key Financial Data"):
+        with st.expander("📊 Key Financial Data", expanded=True):
             def format_val(val, unit="", multiplier=1, is_percent=False):
                 if val is None or val == "N/A": return "N/A"
                 try:
                     num = float(val) * multiplier
                     if is_percent:
                         return f"{num*100:.2f}%"
-                    if unit == "B":
+
+                    # Auto-scale large numbers
+                    abs_num = abs(num)
+                    if abs_num >= 1e12:
+                        return f"${num/1e12:.2f} Trillion"
+                    elif abs_num >= 1e9:
                         return f"${num/1e9:.2f} Billion"
-                    if unit == "M":
+                    elif abs_num >= 1e6:
                         return f"${num/1e6:.2f} Million"
+                    
+                    # Fallback for smaller numbers
                     return f"{num:,.2f} {unit}".strip()
                 except:
                     return "N/A"
@@ -248,7 +255,7 @@ try:
 
             with f_col1:
                 st.markdown("#### 💰 Valuation & Market")
-                st.write(f"**Market Cap:** {format_val(info.get('marketCap'), 'B')}")
+                st.write(f"**Market Cap:** {format_val(info.get('marketCap'))}")
                 st.write(f"**Trailing P/E:** {format_val(info.get('trailingPE'))}")
                 st.write(f"**Forward P/E:** {format_val(info.get('forwardPE'))}")
                 st.write(f"**Beta (5Y Monthly):** {format_val(info.get('beta'))}")
@@ -263,12 +270,12 @@ try:
 
             with f_col2:
                 st.markdown("#### 🏦 Cash & Debt")
-                st.write(f"**Total Cash:** {format_val(info.get('totalCash'), 'B')}")
-                st.write(f"**Total Debt:** {format_val(info.get('totalDebt'), 'B')}")
+                st.write(f"**Total Cash:** {format_val(info.get('totalCash'))}")
+                st.write(f"**Total Debt:** {format_val(info.get('totalDebt'))}")
                 st.write(f"**Debt to Equity:** {format_val(info.get('debtToEquity'))}")
-                st.write(f"**Free Cashflow:** {format_val(info.get('freeCashflow'), 'M')}")
-                st.write(f"**Operating Cashflow:** {format_val(info.get('operatingCashflow'), 'M')}")
-                st.write(f"**Gross Profits:** {format_val(info.get('grossProfits'), 'M')}")
+                st.write(f"**Free Cashflow:** {format_val(info.get('freeCashflow'))}")
+                st.write(f"**Operating Cashflow:** {format_val(info.get('operatingCashflow'))}")
+                st.write(f"**Gross Profits:** {format_val(info.get('grossProfits'))}")
 
                 st.markdown("#### 💎 Profitability Margins")
                 st.write(f"**Gross Margins:** {format_val(info.get('grossMargins'), is_percent=True)}")
