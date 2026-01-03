@@ -127,6 +127,7 @@ header_placeholder.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+try:
     with st.spinner(f'Fetching data for {selected_stock}...'):
         df, info = get_stock_data(selected_stock, selected_period)
         company_name = info.get('longName', selected_stock)
@@ -185,6 +186,11 @@ header_placeholder.markdown("""
             hovertemplate='<b>Price:</b> $%{y:.2f}<br><b>Date:</b> %{x}<extra></extra>'
         ))
 
+        # Calculate dynamic y-axis range
+        y_min = df['Close'].min()
+        y_max = df['Close'].max()
+        padding = (y_max - y_min) * 0.05 if y_max > y_min else y_min * 0.05
+        
         fig.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
@@ -199,7 +205,8 @@ header_placeholder.markdown("""
                 gridcolor='rgba(255,255,255,0.05)',
                 showline=False,
                 tickfont=dict(color='rgba(255,255,255,0.5)'),
-                side='right'
+                side='right',
+                range=[y_min - padding, y_max + padding]
             ),
             margin=dict(l=0, r=0, t=20, b=0),
             height=500,
