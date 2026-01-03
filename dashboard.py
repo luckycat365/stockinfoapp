@@ -96,7 +96,8 @@ st.markdown("""
 
 # --- APP LOGIC ---
 
-def get_stock_data(ticker, period):
+@st.cache_data(ttl=600)
+def fetch_stock_data(ticker, period):
     stock = yf.Ticker(ticker)
     # Get historical data
     df = stock.history(period=period)
@@ -137,7 +138,7 @@ header_placeholder.markdown("""
 
 try:
     with st.spinner(f'Fetching data for {selected_stock}...'):
-        df, info = get_stock_data(selected_stock, selected_period)
+        df, info = fetch_stock_data(selected_stock, selected_period)
         company_name = info.get('longName', selected_stock)
         header_placeholder.markdown(f"""
             <div class="header-container">
