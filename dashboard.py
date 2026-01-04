@@ -325,37 +325,48 @@ try:
                 except:
                     return "N/A"
 
+            def format_date(timestamp):
+                if timestamp is None or timestamp == "N/A": return "N/A"
+                try:
+                    return datetime.fromtimestamp(timestamp).strftime('%d.%m.%Y')
+                except:
+                    return "N/A"
+
             f_col1, f_col2 = st.columns(2)
 
             with f_col1:
-                st.markdown("#### 💰 Valuation & Market")
+                st.markdown("#### 💰 Valuation & Metrics")
                 st.write(f"**Market Cap:** {format_val(info.get('marketCap'))}")
                 st.write(f"**Trailing P/E:** {format_val(info.get('trailingPE'))}")
                 st.write(f"**Forward P/E:** {format_val(info.get('forwardPE'))}")
-                st.write(f"**Beta (5Y Monthly):** {format_val(info.get('beta'))}")
-                st.write(f"**All-Time High:** {format_val(info.get('allTimeHigh'), '$')}")
+                st.write(f"**PEG Ratio:** {format_val(info.get('trailingPegRatio', info.get('pegRatio')))}")
+                st.write(f"**Trailing EPS:** {format_val(info.get('trailingEps'), '$')}")
                 st.write(f"**Short Ratio:** {format_val(info.get('shortRatio'))}")
 
                 st.markdown("#### 📈 Growth & Targets")
+                st.write(f"**Earnings Growth:** {format_val(info.get('earningsGrowth'), is_percent=True)}")
                 st.write(f"**Quarterly Earnings Growth:** {format_val(info.get('earningsQuarterlyGrowth'), is_percent=True)}")
-                st.write(f"**Target High Price:** {format_val(info.get('targetHighPrice'), '$')}")
-                st.write(f"**Target Mean Price:** {format_val(info.get('targetMeanPrice'), '$')}")
-                st.write(f"**Target Low Price:** {format_val(info.get('targetLowPrice'), '$')}")
+                st.write(f"**Revenue Growth:** {format_val(info.get('revenueGrowth'), is_percent=True)}")
+                st.write(f"**Target High:** {format_val(info.get('targetHighPrice'), '$')}")
+                st.write(f"**Target Mean:** {format_val(info.get('targetMeanPrice'), '$')}")
+                st.write(f"**Target Low:** {format_val(info.get('targetLowPrice'), '$')}")
+                st.write(f"**Next Earnings Date:** {format_date(info.get('earningsTimestampStart'))}")
 
             with f_col2:
+                st.markdown("#### 💵 Income & Returns")
+                st.write(f"**Total Revenue:** {format_val(info.get('totalRevenue'))}")
+                st.write(f"**EBITDA:** {format_val(info.get('ebitda'))}")
+                st.write(f"**Gross Profits:** {format_val(info.get('grossProfits'))}")
+                st.write(f"**Gross Margins:** {format_val(info.get('grossMargins'), is_percent=True)}")
+                st.write(f"**Operating Margins:** {format_val(info.get('operatingMargins'), is_percent=True)}")
+                st.write(f"**Profit Margins:** {format_val(info.get('profitMargins'), is_percent=True)}")
+
                 st.markdown("#### 🏦 Cash & Debt")
                 st.write(f"**Total Cash:** {format_val(info.get('totalCash'))}")
                 st.write(f"**Total Debt:** {format_val(info.get('totalDebt'))}")
-                st.write(f"**Debt to Equity:** {format_val(info.get('debtToEquity'))}")
+                st.write(f"**Debt to Equity:** {format_val(info.get('debtToEquity'), multiplier=0.01)}")
                 st.write(f"**Free Cashflow:** {format_val(info.get('freeCashflow'))}")
                 st.write(f"**Operating Cashflow:** {format_val(info.get('operatingCashflow'))}")
-                st.write(f"**Gross Profits:** {format_val(info.get('grossProfits'))}")
-
-                st.markdown("#### 💎 Profitability Margins")
-                st.write(f"**Gross Margins:** {format_val(info.get('grossMargins'), is_percent=True)}")
-                st.write(f"**EBITDA Margins:** {format_val(info.get('ebitdaMargins'), is_percent=True)}")
-                st.write(f"**Operating Margins:** {format_val(info.get('operatingMargins'), is_percent=True)}")
-                st.write(f"**Profit Margins:** {format_val(info.get('profitMargins'), is_percent=True)}")
 
         # --- Company Officers Section ---
         st.markdown("### 👔 Key Leadership")
