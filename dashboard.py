@@ -16,7 +16,7 @@ def get_img_with_href(local_img_path):
     return f"data:image/{img_format};base64,{binary_string}"
 
 try:
-    bg_img = get_img_with_href('Background.webp')
+    bg_img = get_img_with_href('Background.jpg')
 except Exception:
     bg_img = ""
 
@@ -39,7 +39,7 @@ st.markdown("""
 
     /* Main background */
     .stApp {
-        background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("BG_URL_PLACEHOLDER");
+        background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url("BG_URL_PLACEHOLDER");
         background-size: cover;
         background-attachment: fixed;
         color: #e0e0e0;
