@@ -3,6 +3,22 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
+import base64
+
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+def get_img_with_href(local_img_path):
+    img_format = local_img_path.split('.')[-1]
+    binary_string = get_base64_of_bin_file(local_img_path)
+    return f"data:image/{img_format};base64,{binary_string}"
+
+try:
+    bg_img = get_img_with_href('Background.webp')
+except Exception:
+    bg_img = ""
 
 # --- PAGE CONFIG ---
 st.set_page_config(
@@ -23,7 +39,9 @@ st.markdown("""
 
     /* Main background */
     .stApp {
-        background: radial-gradient(circle at top right, #1e1e2f, #121212);
+        background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("BG_URL_PLACEHOLDER");
+        background-size: cover;
+        background-attachment: fixed;
         color: #e0e0e0;
     }
 
@@ -92,7 +110,7 @@ st.markdown("""
         font-size: 0.8rem;
     }
     </style>
-""", unsafe_allow_html=True)
+""".replace("BG_URL_PLACEHOLDER", bg_img), unsafe_allow_html=True)
 
 # --- APP LOGIC ---
 
@@ -118,8 +136,18 @@ time_range_map = {
     "5 Years": "5y",
     "10 Years": "10y"
 }
-selected_range_label = st.sidebar.radio("Time Horizon", list(time_range_map.keys()), index=2)
+time_range_options = list(time_range_map.keys())
+# Use session state to persist value when widget is moved/rerun
+if 'time_horizon' not in st.session_state:
+    st.session_state.time_horizon = time_range_options[2] # Default to 1 Month
+
+# Sync with the widget's session state if it exists
+if 'time_horizon_widget' in st.session_state and st.session_state.time_horizon_widget:
+    st.session_state.time_horizon = st.session_state.time_horizon_widget
+
+selected_range_label = st.session_state.time_horizon
 selected_period = time_range_map[selected_range_label]
+
 
 # Main Title
 st.markdown("""
@@ -222,6 +250,17 @@ try:
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        # Time Horizon Selection directly under chart
+        st.markdown("<div style='display: flex; justify-content: center; margin-top: -15px; margin-bottom: 25px;'>", unsafe_allow_html=True)
+        st.session_state.time_horizon = st.segmented_control(
+            "Select Time Horizon",
+            options=time_range_options,
+            default=st.session_state.time_horizon,
+            key="time_horizon_widget",
+            label_visibility="collapsed"
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
         # Additional Info
         with st.expander("ℹ️ Company Profile"):
