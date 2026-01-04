@@ -5,20 +5,38 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import base64
 
+def play_background_music(file_path: str):
+    with open(file_path, "rb") as f:
+        data = f.read()
+    b64 = base64.b64encode(data).decode()
+    
+    html = f"""
+    <audio autoplay loop style="display:none;">
+        <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+    </audio>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+# Call it with your local file
+play_background_music("knowme.mp3")
+if st.button("Music"):
+    play_background_music("knowme.mp3") 
+
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, 'rb') as f:
         data = f.read()
     return base64.b64encode(data).decode()
 
-def get_img_with_href(local_img_path):
-    img_format = local_img_path.split('.')[-1]
-    binary_string = get_base64_of_bin_file(local_img_path)
-    return f"data:image/{img_format};base64,{binary_string}"
+def get_base64_data_url(file_path, file_type):
+    ext = file_path.split('.')[-1]
+    binary_string = get_base64_of_bin_file(file_path)
+    return f"data:{file_type}/{ext};base64,{binary_string}"
 
 try:
-    bg_img = get_img_with_href('Background.jpg')
+    bg_img = get_base64_data_url('Background.jpg', 'image')
 except Exception:
     bg_img = ""
+
 
 # --- PAGE CONFIG ---
 st.set_page_config(
@@ -360,6 +378,6 @@ except Exception as e:
 
 st.markdown("""
     <div class="footer">
-        Powered by yfinance & Streamlit • Created by Antigravity AI
+        • Created by Vincent
     </div>
 """, unsafe_allow_html=True)
