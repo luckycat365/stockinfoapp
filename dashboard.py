@@ -52,7 +52,7 @@ st.markdown("""
 
     /* Main background */
     .stApp {
-        background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url("BG_URL_PLACEHOLDER");
+        background: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url("BG_URL_PLACEHOLDER");
         background-size: cover;
         background-attachment: fixed;
         color: #e0e0e0;
@@ -62,6 +62,16 @@ st.markdown("""
     section[data-testid="stSidebar"] {
         background-color: rgba(20, 20, 30, 0.8);
         border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Label for collapsed sidebar */
+    button[data-testid="stSidebarCollapsedControl"] {
+        width: auto !important;
+        padding: 0 10px !important;
+        background-color: rgba(20, 20, 30, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0 8px 8px 0;
+        margin-top: 10px;
     }
 
     /* Card-like metrics */
@@ -137,11 +147,9 @@ def fetch_stock_data(ticker, period):
     return df, info
 
 # Sidebar - Stock Selection
-st.sidebar.header("🕹️ Controls")
+st.sidebar.header("Select Stock")
 
-# Music Toggle
-if st.sidebar.checkbox("Play Background Music", value=True):
-    play_background_music("knowme.mp3")
+
 
 default_stocks = ['GOOG','NVDA','TSLA', 'MSFT', 'HOOD', 'PLTR', 'FIG','MBG.DE', 'VOW3.DE', 'BMW.DE', 'CRWV','COIN', 'META','QBTS']
 selected_stock = st.sidebar.selectbox("Select Active Ticker", default_stocks, index=0)
@@ -167,10 +175,20 @@ selected_range_label = st.session_state.time_horizon
 selected_period = time_range_map[selected_range_label]
 
 
+# Music Control
+if 'music_playing' not in st.session_state:
+    st.session_state.music_playing = False
+
+if st.button("MUSIC"):
+    st.session_state.music_playing = not st.session_state.music_playing
+
+if st.session_state.music_playing:
+    play_background_music("knowme.mp3")
+
 # Main Title
 st.markdown("""
     <div style="text-align: center; margin-top: 1rem;">
-        <h2 style="color: rgba(255,255,255,0.7); font-weight: 300; letter-spacing: 2px;">STOCK INFORMATION</h2>
+        <h2 style="color: rgba(255,255,255,0.7); font-weight: 300; letter-spacing: 2px;">Use Sidebar to select Stock</h2>
     </div>
 """, unsafe_allow_html=True)
 
