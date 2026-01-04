@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import base64
+import streamlit.components.v1 as components
 
 
 @st.cache_data
@@ -40,6 +41,23 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# --- MOBILE SIDEBAR HACK ---
+# Force sidebar to open on mobile (where it defaults to collapsed)
+if 'sidebar_opened_once' not in st.session_state:
+    st.session_state.sidebar_opened_once = True
+    components.html("""
+        <script>
+            // Wait a bit for the DOM to be ready
+            setTimeout(function(){
+                // Look for the 'Open Sidebar' button (visible only if collapsed)
+                const button = window.parent.document.querySelector('button[data-testid="stSidebarCollapsedControl"]');
+                if (button) {
+                    button.click();
+                }
+            }, 500); 
+        </script>
+    """, height=0)
 
 # --- CUSTOM CSS FOR PREMIUM FEEL ---
 st.markdown("""
