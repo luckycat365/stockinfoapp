@@ -170,8 +170,7 @@ try:
         eps = info.get('trailingEps', 'N/A')
         if eps != 'N/A': eps = f"${eps:.2f}"
 
-        col2.metric("P/E Ratio (Forward)", pe_ratio)
-        col3.metric("EPS (Trailing)", eps)
+        col2.metric("EPS (Trailing)", eps)
 
         # Plotly Chart
         st.markdown("### Market Movement")
