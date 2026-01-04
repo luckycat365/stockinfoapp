@@ -152,7 +152,13 @@ st.sidebar.header("Select Stock")
 
 
 default_stocks = ['GOOG','NVDA','TSLA', 'MSFT', 'HOOD', 'PLTR', 'FIG','MBG.DE', 'VOW3.DE', 'BMW.DE', 'CRWV','COIN', 'META','QBTS']
-selected_stock = st.sidebar.selectbox("Select Active Ticker", default_stocks, index=0)
+dropdown_stock = st.sidebar.selectbox("interesting stocks", default_stocks, index=0)
+custom_ticker = st.sidebar.text_input("Or enter any ticker symbol")
+
+if custom_ticker:
+    selected_stock = custom_ticker.upper()
+else:
+    selected_stock = dropdown_stock
 
 time_range_map = {
     "1 Day": "1d",
