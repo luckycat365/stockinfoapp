@@ -5,10 +5,15 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import base64
 
-def play_background_music(file_path: str):
-    with open(file_path, "rb") as f:
+
+@st.cache_data
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
         data = f.read()
-    b64 = base64.b64encode(data).decode()
+    return base64.b64encode(data).decode()
+
+def play_background_music(file_path: str):
+    b64 = get_base64_of_bin_file(file_path)
     
     html = f"""
     <audio autoplay loop style="display:none;">
@@ -16,16 +21,6 @@ def play_background_music(file_path: str):
     </audio>
     """
     st.markdown(html, unsafe_allow_html=True)
-
-# Call it with your local file
-play_background_music("knowme.mp3")
-if st.button("Music"):
-    play_background_music("knowme.mp3") 
-
-def get_base64_of_bin_file(bin_file):
-    with open(bin_file, 'rb') as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
 
 def get_base64_data_url(file_path, file_type):
     ext = file_path.split('.')[-1]
@@ -40,7 +35,7 @@ except Exception:
 
 # --- PAGE CONFIG ---
 st.set_page_config(
-    page_title="Starlight Quant Dashboard",
+    page_title="Vincent's hobby Dashboard",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -143,7 +138,12 @@ def fetch_stock_data(ticker, period):
 
 # Sidebar - Stock Selection
 st.sidebar.header("🕹️ Controls")
-default_stocks = ['TSLA', 'NVDA', 'GOOG', 'MSFT', 'HOOD', 'PLTR']
+
+# Music Toggle
+if st.sidebar.checkbox("Play Background Music", value=True):
+    play_background_music("knowme.mp3")
+
+default_stocks = ['GOOG','NVDA','TSLA', 'MSFT', 'HOOD', 'PLTR', 'FIG','MBG.DE', 'VOW3.DE', 'BMW.DE', 'CRWV','COIN', 'META','QBTS']
 selected_stock = st.sidebar.selectbox("Select Active Ticker", default_stocks, index=0)
 
 time_range_map = {
@@ -196,7 +196,7 @@ try:
         st.error("No data found for this ticker and period.")
     else:
         # Layout: Top Row Metrics
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3 = st.columns(3)
         
         # Current Price
         current_price = df['Close'].iloc[-1]
@@ -216,7 +216,7 @@ try:
         eps = info.get('trailingEps', 'N/A')
         if eps != 'N/A': eps = f"${eps:.2f}"
 
-        col2.metric("EPS (Trailing)", eps)
+        # col2.metric("EPS (Trailing)", eps)
 
         # Plotly Chart
         st.markdown("### Market Movement")
