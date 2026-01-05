@@ -230,7 +230,7 @@ selected_stock = st.session_state.selected_stock
 
 time_range_map = {
     "1 Day": "1d",
-    "1 Week": "5d",
+    "5 Days": "5d",
     "1 Month": "1mo",
     "1 Year": "1y",
     "5 Years": "5y",
