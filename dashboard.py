@@ -2,6 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
 import base64
 import streamlit.components.v1 as components
@@ -184,6 +185,20 @@ def fetch_stock_data(ticker, period):
     info = stock.info
     return df, info
 
+def calculate_rsi(data, window=14):
+    delta = data['Close'].diff()
+    gain = delta.where(delta > 0, 0)
+    loss = -delta.where(delta < 0, 0)
+    
+    # Wilder's Smoothing: avg_gain = (prev_avg_gain * (n-1) + current_gain) / n
+    # This is equivalent to EMA with alpha = 1 / n
+    avg_gain = gain.ewm(alpha=1/window, min_periods=window, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=1/window, min_periods=window, adjust=False).mean()
+    
+    rs = avg_gain / avg_loss
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
+
 # Sidebar - Stock Selection
 st.sidebar.header("Select Stock")
 
@@ -337,21 +352,44 @@ try:
                 st.session_state.currency = "USD" if st.session_state.currency == "EUR" else "EUR"
                 st.rerun()
         
-        fig = go.Figure()
+        # Calculate RSI
+        display_df['RSI'] = calculate_rsi(display_df)
 
-        # Add trace
+        # Create subplots: Row 1 = Candlestick (70%), Row 2 = RSI (30%)
+        fig = make_subplots(
+            rows=2, cols=1, 
+            shared_xaxes=True, 
+            vertical_spacing=0.05, 
+            row_heights=[0.7, 0.3],
+            subplot_titles=("", "")
+        )
+
+        # Add Candlestick trace to Row 1
         fig.add_trace(go.Candlestick(
             x=display_df.index,
             open=display_df['Open'],
             high=display_df['High'],
             low=display_df['Low'],
             close=display_df['Close'],
-            name=selected_stock,
+            name=f"{selected_stock} Price",
             increasing_line_color='#00ffcc', 
             decreasing_line_color='#ff4d4d'
-        ))
+        ), row=1, col=1)
 
-        # Calculate dynamic y-axis range
+        # Add RSI trace to Row 2
+        fig.add_trace(go.Scatter(
+            x=display_df.index,
+            y=display_df['RSI'],
+            name='RSI',
+            line=dict(color='#ffcc00', width=2),
+            hovertemplate='%{y:.2f}'
+        ), row=2, col=1)
+
+        # Add horizontal lines for RSI overbought (70) and oversold (30) levels
+        fig.add_hline(y=70, line_dash="dash", line_color="rgba(255, 77, 77, 0.5)", row=2, col=1)
+        fig.add_hline(y=30, line_dash="dash", line_color="rgba(0, 255, 204, 0.5)", row=2, col=1)
+
+        # Calculate dynamic y-axis range for Price chart
         y_min = display_df['Low'].min()
         y_max = display_df['High'].max()
         padding = (y_max - y_min) * 0.1 if y_max > y_min else y_min * 0.1
@@ -374,11 +412,22 @@ try:
                 range=[y_min - padding, y_max + padding],
                 tickprefix=currency_symbol
             ),
+            # RSI y-axis styling
+            yaxis2=dict(
+                showgrid=True,
+                gridcolor='rgba(255,255,255,0.05)',
+                showline=False,
+                tickfont=dict(color='rgba(255,255,255,0.5)'),
+                side='right',
+                range=[0, 100],
+                tickvals=[30, 70],
+                title="RSI (14)"
+            ),
             xaxis_rangebreaks=[
                 dict(bounds=["sat", "mon"]), # hide weekends
             ],
             margin=dict(l=0, r=0, t=20, b=0),
-            height=500,
+            height=650, # Increased height to accommodate the extra chart
             xaxis_rangeslider_visible=False,
             hovermode="x unified",
             showlegend=False
