@@ -292,7 +292,7 @@ try:
         
         # Current Price
         current_price = df['Close'].iloc[-1]
-        prev_price = df['Close'].iloc[0]
+        prev_price = df['Open'].iloc[0]
 
         # Currency conversion for chart
         display_df = df.copy()
@@ -301,7 +301,8 @@ try:
         
         if st.session_state.currency == "EUR":
             rate = convert_usd_to_eur(1.0)
-            display_df['Close'] = display_df['Close'] * rate
+            for col in ['Open', 'High', 'Low', 'Close']:
+                display_df[col] = display_df[col] * rate
             display_price = current_price * rate
         else:
             display_price = current_price
@@ -336,28 +337,24 @@ try:
                 st.session_state.currency = "USD" if st.session_state.currency == "EUR" else "EUR"
                 st.rerun()
         
-        # Determine color based on trend
-        line_color = '#00ffcc' if current_price >= prev_price else '#ff4d4d'
-        fill_color = 'rgba(0, 255, 204, 0.1)' if current_price >= prev_price else 'rgba(255, 77, 77, 0.1)'
-
         fig = go.Figure()
 
         # Add trace
-        fig.add_trace(go.Scatter(
-            x=display_df.index, 
-            y=display_df['Close'],
-            mode='lines',
-            line=dict(color=line_color, width=3, shape='spline'),
-            fill='tozeroy',
-            fillcolor=fill_color,
+        fig.add_trace(go.Candlestick(
+            x=display_df.index,
+            open=display_df['Open'],
+            high=display_df['High'],
+            low=display_df['Low'],
+            close=display_df['Close'],
             name=selected_stock,
-            hovertemplate=f'<b>Price:</b> {currency_symbol}%{{y:.2f}}<br><b>Date:</b> %{{x}}<extra></extra>'
+            increasing_line_color='#00ffcc', 
+            decreasing_line_color='#ff4d4d'
         ))
 
         # Calculate dynamic y-axis range
-        y_min = display_df['Close'].min()
-        y_max = display_df['Close'].max()
-        padding = (y_max - y_min) * 0.05 if y_max > y_min else y_min * 0.05
+        y_min = display_df['Low'].min()
+        y_max = display_df['High'].max()
+        padding = (y_max - y_min) * 0.1 if y_max > y_min else y_min * 0.1
         
         fig.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',
@@ -382,6 +379,7 @@ try:
             ],
             margin=dict(l=0, r=0, t=20, b=0),
             height=500,
+            xaxis_rangeslider_visible=False,
             hovermode="x unified",
             showlegend=False
         )
