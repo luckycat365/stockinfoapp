@@ -301,7 +301,7 @@ try:
         with chart_title_col:
             st.markdown(f"### Market Movement [{currency_symbol}]")
         with chart_btn_col:
-            btn_label = "Dollar" if st.session_state.currency == "EUR" else "Euro"
+            btn_label = "Switch to $" if st.session_state.currency == "EUR" else "Switch to €"
             if st.button(btn_label):
                 st.session_state.currency = "USD" if st.session_state.currency == "EUR" else "EUR"
                 st.rerun()
