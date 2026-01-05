@@ -306,6 +306,9 @@ try:
         else:
             display_price = current_price
 
+        # Ensure only Monday to Friday (dayofweek < 5: 0=Mon, 4=Fri)
+        display_df = display_df[display_df.index.dayofweek < 5]
+
         price_change = current_price - prev_price
         pct_change = (price_change / prev_price) * 100
 
@@ -374,6 +377,9 @@ try:
                 range=[y_min - padding, y_max + padding],
                 tickprefix=currency_symbol
             ),
+            xaxis_rangebreaks=[
+                dict(bounds=["sat", "mon"]), # hide weekends
+            ],
             margin=dict(l=0, r=0, t=20, b=0),
             height=500,
             hovermode="x unified",
