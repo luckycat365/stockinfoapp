@@ -5,6 +5,26 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import base64
 import streamlit.components.v1 as components
+import requests
+
+@st.cache_data(ttl=3600)
+def convert_usd_to_eur(amount):
+    # Using the latest 2026 endpoint
+    url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json"
+    
+    try:
+        response = requests.get(url)
+        data = response.json()
+        
+        # The data is nested under the base currency key ('usd')
+        rate = data['usd']['eur']
+        total = amount * rate
+        
+        print(f"${amount} USD = {total:.2f} EUR (Rate: {rate})")
+        return total
+    except Exception as e:
+        print(f"Error: {e}")
+        return amount * 0.92 # Fallback
 
 
 @st.cache_data
@@ -167,6 +187,9 @@ def fetch_stock_data(ticker, period):
 # Sidebar - Stock Selection
 st.sidebar.header("Select Stock")
 
+if 'currency' not in st.session_state:
+    st.session_state.currency = 'EUR'
+
 
 
 default_stocks = ['GOOG','NVDA','TSLA', 'MSFT', 'HOOD', 'PLTR', 'FIG','MBG.DE', 'VOW3.DE', 'BMW.DE', 'CRWV','COIN', 'META','QBTS']
@@ -243,10 +266,23 @@ try:
         # Current Price
         current_price = df['Close'].iloc[-1]
         prev_price = df['Close'].iloc[0]
+
+        # Currency conversion for chart
+        display_df = df.copy()
+        currency_label = "Euro" if st.session_state.currency == "EUR" else "USD"
+        currency_symbol = "€" if st.session_state.currency == "EUR" else "$"
+        
+        if st.session_state.currency == "EUR":
+            rate = convert_usd_to_eur(1.0)
+            display_df['Close'] = display_df['Close'] * rate
+            display_price = current_price * rate
+        else:
+            display_price = current_price
+
         price_change = current_price - prev_price
         pct_change = (price_change / prev_price) * 100
 
-        col1.metric("Current Price", f"${current_price:,.2f}", f"{pct_change:+.2f}%")
+        col1.metric("Current Price", f"{currency_symbol}{display_price:,.2f}", f"{pct_change:+.2f}%")
         
         # Financial Data requested: PE ratio, peg ratio, eps
         pe_ratio = info.get('forwardPE', 'N/A')
@@ -261,7 +297,14 @@ try:
         # col2.metric("EPS (Trailing)", eps)
 
         # Plotly Chart
-        st.markdown("### Market Movement")
+        chart_title_col, chart_btn_col = st.columns([0.8, 0.2])
+        with chart_title_col:
+            st.markdown(f"### Market Movement [{currency_symbol}]")
+        with chart_btn_col:
+            btn_label = "Dollar" if st.session_state.currency == "EUR" else "Euro"
+            if st.button(btn_label):
+                st.session_state.currency = "USD" if st.session_state.currency == "EUR" else "EUR"
+                st.rerun()
         
         # Determine color based on trend
         line_color = '#00ffcc' if current_price >= prev_price else '#ff4d4d'
@@ -271,19 +314,19 @@ try:
 
         # Add trace
         fig.add_trace(go.Scatter(
-            x=df.index, 
-            y=df['Close'],
+            x=display_df.index, 
+            y=display_df['Close'],
             mode='lines',
             line=dict(color=line_color, width=3, shape='spline'),
             fill='tozeroy',
             fillcolor=fill_color,
             name=selected_stock,
-            hovertemplate='<b>Price:</b> $%{y:.2f}<br><b>Date:</b> %{x}<extra></extra>'
+            hovertemplate=f'<b>Price:</b> {currency_symbol}%{{y:.2f}}<br><b>Date:</b> %{{x}}<extra></extra>'
         ))
 
         # Calculate dynamic y-axis range
-        y_min = df['Close'].min()
-        y_max = df['Close'].max()
+        y_min = display_df['Close'].min()
+        y_max = display_df['Close'].max()
         padding = (y_max - y_min) * 0.05 if y_max > y_min else y_min * 0.05
         
         fig.update_layout(
@@ -301,7 +344,8 @@ try:
                 showline=False,
                 tickfont=dict(color='rgba(255,255,255,0.5)'),
                 side='right',
-                range=[y_min - padding, y_max + padding]
+                range=[y_min - padding, y_max + padding],
+                tickprefix=currency_symbol
             ),
             margin=dict(l=0, r=0, t=20, b=0),
             height=500,
