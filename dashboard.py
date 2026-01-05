@@ -193,13 +193,40 @@ if 'currency' not in st.session_state:
 
 
 default_stocks = ['GOOG','NVDA','TSLA', 'MSFT', 'HOOD', 'PLTR', 'FIG','MBG.DE', 'VOW3.DE', 'BMW.DE', 'CRWV','COIN', 'META','QBTS']
-dropdown_stock = st.sidebar.selectbox("interesting stocks", default_stocks, index=0)
-custom_ticker = st.sidebar.text_input("Or enter any ticker symbol")
 
-if custom_ticker:
-    selected_stock = custom_ticker.upper()
-else:
-    selected_stock = dropdown_stock
+if 'selected_stock' not in st.session_state:
+    st.session_state.selected_stock = default_stocks[0]
+
+def handle_custom_ticker():
+    ticker = st.session_state.custom_ticker_input.strip().upper()
+    if ticker:
+        st.session_state.selected_stock = ticker
+        st.session_state.custom_ticker_input = "" # Clear the field
+
+def handle_dropdown():
+    st.session_state.selected_stock = st.session_state.dropdown_input
+
+# Sync dropdown index with session state
+try:
+    current_index = default_stocks.index(st.session_state.selected_stock)
+except ValueError:
+    current_index = 0
+
+st.sidebar.selectbox(
+    "interesting stocks", 
+    default_stocks, 
+    index=current_index, 
+    key="dropdown_input", 
+    on_change=handle_dropdown
+)
+
+st.sidebar.text_input(
+    "Or enter any ticker symbol", 
+    key="custom_ticker_input", 
+    on_change=handle_custom_ticker
+)
+
+selected_stock = st.session_state.selected_stock
 
 time_range_map = {
     "1 Day": "1d",
