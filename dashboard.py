@@ -437,7 +437,8 @@ try:
                 tickfont=dict(color='rgba(255,255,255,0.5)'),
                 side='right',
                 range=[y_min - padding, y_max + padding],
-                tickprefix=currency_symbol
+                tickprefix=currency_symbol,
+                fixedrange=True
             ),
             # RSI y-axis styling
             yaxis2=dict(
@@ -448,7 +449,8 @@ try:
                 side='right',
                 range=[0, 100],
                 tickvals=[30, 70],
-                title="RSI (14)"
+                title="RSI (14)",
+                fixedrange=True
             ),
             xaxis_rangebreaks=[
                 dict(bounds=["sat", "mon"]), # hide weekends
