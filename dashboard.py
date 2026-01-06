@@ -27,6 +27,24 @@ def convert_usd_to_eur(amount):
         print(f"Error: {e}")
         return amount * 0.92 # Fallback
 
+@st.cache_data(ttl=3600)
+def convert_eur_to_usd(amount):
+    # Using the latest 2026 endpoint
+    url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/eur.json"
+    
+    try:
+        response = requests.get(url)
+        data = response.json()
+        
+        # The data is nested under the base currency key ('eur')
+        rate = data['eur']['usd']
+        total = amount * rate
+        
+        print(f"€{amount} EUR = {total:.2f} USD (Rate: {rate})")
+        return total
+    except Exception as e:
+        print(f"Error: {e}")
+        return amount * 1.08 # Fallback
 
 @st.cache_data
 def get_base64_of_bin_file(bin_file):
@@ -277,7 +295,7 @@ if st.session_state.music_playing:
 # Main Title
 st.markdown("""
     <div style="text-align: center; margin-top: 1rem;">
-        <h2 style="color: rgba(255,255,255,0.7); font-weight: 300; letter-spacing: 2px;">Use Sidebar to select Stock</h2>
+        <h2 style="color: rgba(255,255,255,0.7); font-weight: 300; letter-spacing: 2px;">Select stock in sidebar</h2>
     </div>
 """, unsafe_allow_html=True)
 
@@ -292,6 +310,15 @@ header_placeholder.markdown("""
 try:
     with st.spinner(f'Fetching data for {selected_stock}...'):
         df, info = fetch_stock_data(selected_stock, selected_period)
+        # Check if source currency is EUR (specific to these German stocks)
+        eur_stocks = ['MBG.DE', 'VOW3.DE', 'BMW.DE']
+        if selected_stock in eur_stocks:
+            # Normalize price data to USD so the rest of the app works predictably
+            usd_rate = convert_eur_to_usd(1.0)
+            for col in ['Open', 'High', 'Low', 'Close']:
+                df[col] = df[col] * usd_rate
+            #print(f"Normalized {selected_stock} from EUR to USD using rate {usd_rate}")
+
         company_name = info.get('longName', selected_stock)
         header_placeholder.markdown(f"""
             <div class="header-container">
@@ -433,7 +460,7 @@ try:
             showlegend=False
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
         # Time Horizon Selection directly under chart
         st.markdown("<div style='display: flex; justify-content: center; margin-top: -15px; margin-bottom: 25px;'>", unsafe_allow_html=True)
@@ -544,7 +571,7 @@ try:
                 if officer_list:
                     # Convert to DataFrame for a clean UI table
                     df_officers = pd.DataFrame(officer_list)
-                    st.dataframe(df_officers, use_container_width=True, hide_index=True)
+                    st.dataframe(df_officers, width='stretch', hide_index=True)
                 else:
                     st.info("No detailed officer metrics found.")
             else:
