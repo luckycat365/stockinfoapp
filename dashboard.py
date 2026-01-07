@@ -67,10 +67,19 @@ def get_base64_data_url(file_path, file_type):
     binary_string = get_base64_of_bin_file(file_path)
     return f"data:{file_type}/{ext};base64,{binary_string}"
 
-try:
-    bg_img = get_base64_data_url('Background.jpg', 'image')
-except Exception:
-    bg_img = ""
+# Load all background images
+bg_images = []
+for i in range(1, 6):
+    try:
+        if i == 1:
+            bg_images.append(get_base64_data_url('Background.jpg', 'image'))
+        else:
+            bg_images.append(get_base64_data_url(f'Background{i}.jpg', 'image'))
+    except Exception:
+        pass
+
+# Use first image as fallback
+bg_img = bg_images[0] if bg_images else ""
 
 
 # --- PAGE CONFIG ---
@@ -95,6 +104,31 @@ if 'sidebar_opened_once' not in st.session_state:
                     button.click();
                 }
             }, 500); 
+        </script>
+    """, height=0)
+
+# --- BACKGROUND IMAGE ROTATION ---
+# Inject JavaScript to rotate background images
+if bg_images:
+    bg_js_array = "[" + ",".join([f'"{img}"' for img in bg_images]) + "]"
+    components.html(f"""
+        <script>
+            const backgrounds = {bg_js_array};
+            let currentIndex = 0;
+            
+            function rotateBackground() {{
+                currentIndex = (currentIndex + 1) % backgrounds.length;
+                const newBgUrl = backgrounds[currentIndex];
+                const appElement = window.parent.document.querySelector('.stApp');
+                if (appElement) {{
+                    appElement.style.background = `linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url("${{newBgUrl}}")`;
+                    appElement.style.backgroundSize = 'cover';
+                    appElement.style.backgroundAttachment = 'fixed';
+                }}
+            }}
+            
+            // Rotate every 10 seconds (10000 milliseconds)
+            setInterval(rotateBackground, 10000);
         </script>
     """, height=0)
 
