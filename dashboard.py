@@ -306,7 +306,7 @@ time_range_map = {
 time_range_options = list(time_range_map.keys())
 # Use session state to persist value when widget is moved/rerun
 if 'time_horizon' not in st.session_state:
-    st.session_state.time_horizon = time_range_options[2] # Default to 1 Month
+    st.session_state.time_horizon = time_range_options[0] # Default to 1 Day
 
 # Sync with the widget's session state if it exists
 if 'time_horizon_widget' in st.session_state and st.session_state.time_horizon_widget:
@@ -328,7 +328,7 @@ if st.session_state.music_playing:
 
 # Main Title
 st.markdown("""
-    <div style="text-align: center; margin-top: 1rem;">
+    <div style="text-align: center; margin-top: 0rem;">
         <h2 style="color: rgba(255,255,255,0.7); font-weight: 300; letter-spacing: 2px;">Select stock in sidebar</h2>
     </div>
 """, unsafe_allow_html=True)
@@ -403,11 +403,9 @@ try:
 
         # col2.metric("EPS (Trailing)", eps)
 
-        # Plotly Chart
-        chart_title_col, chart_btn_col = st.columns([0.8, 0.2])
-        with chart_title_col:
-            st.markdown(f"### Market Movement [{currency_symbol}]")
-        with chart_btn_col:
+        # Plotly Chart - Currency Switch Button
+        col_btn,col_right = st.columns([0.9, 0.1])
+        with col_btn:
             btn_label = "Switch to $" if st.session_state.currency == "EUR" else "Switch to €"
             if st.button(btn_label):
                 st.session_state.currency = "USD" if st.session_state.currency == "EUR" else "EUR"
