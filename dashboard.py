@@ -155,14 +155,29 @@ st.markdown("""
         border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* Label for collapsed sidebar */
+    /* Label for collapsed sidebar - Enhanced visibility */
     button[data-testid="stSidebarCollapsedControl"] {
         width: auto !important;
-        padding: 0 10px !important;
-        background-color: rgba(20, 20, 30, 0.8) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 0 8px 8px 0;
+        padding: 12px 16px !important;
+        background-color: rgba(0, 200, 255, 0.15) !important;
+        border: 2px solid rgba(0, 200, 255, 0.5) !important;
+        border-radius: 0 12px 12px 0;
         margin-top: 10px;
+        font-size: 24px !important;
+        transition: all 0.3s ease;
+    }
+    
+    button[data-testid="stSidebarCollapsedControl"]:hover {
+        background-color: rgba(0, 200, 255, 0.3) !important;
+        border-color: rgba(0, 200, 255, 0.8) !important;
+        transform: translateX(3px);
+    }
+    
+    /* Add custom menu icon */
+    button[data-testid="stSidebarCollapsedControl"]::before {
+        content: "☰ ";
+        font-size: 20px;
+        margin-right: 5px;
     }
 
     /* Card-like metrics */
@@ -256,6 +271,9 @@ st.sidebar.header("Select Stock")
 
 if 'currency' not in st.session_state:
     st.session_state.currency = 'EUR'
+
+if 'zoom_enabled' not in st.session_state:
+    st.session_state.zoom_enabled = False
 
 
 
@@ -404,11 +422,17 @@ try:
         # col2.metric("EPS (Trailing)", eps)
 
         # Plotly Chart - Currency Switch Button
-        col_btn,col_right = st.columns([0.9, 0.1])
+        col_btn, col_spacer, col_zoom = st.columns([0.2, 0.6, 0.15])
         with col_btn:
             btn_label = "Switch to $" if st.session_state.currency == "EUR" else "Switch to €"
-            if st.button(btn_label):
+            if st.button(btn_label, use_container_width=True):
                 st.session_state.currency = "USD" if st.session_state.currency == "EUR" else "EUR"
+                st.rerun()
+        
+        with col_zoom:
+            zoom_label = "Disable Zoom" if st.session_state.zoom_enabled else "Zoom"
+            if st.button(zoom_label, use_container_width=True):
+                st.session_state.zoom_enabled = not st.session_state.zoom_enabled
                 st.rerun()
         
         # Calculate RSI
@@ -460,7 +484,8 @@ try:
                 showgrid=False,
                 showline=True,
                 linecolor='rgba(255,255,255,0.1)',
-                tickfont=dict(color='rgba(255,255,255,0.5)')
+                tickfont=dict(color='rgba(255,255,255,0.5)'),
+                fixedrange=not st.session_state.zoom_enabled
             ),
             yaxis=dict(
                 showgrid=True,
@@ -491,7 +516,8 @@ try:
             height=650, # Increased height to accommodate the extra chart
             xaxis_rangeslider_visible=False,
             hovermode="x unified",
-            showlegend=False
+            showlegend=False,
+            dragmode='zoom' if st.session_state.zoom_enabled else False
         )
 
         st.plotly_chart(fig, width='stretch')
